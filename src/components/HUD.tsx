@@ -7,8 +7,6 @@ interface HUDProps {
   onToggleMusic: () => void;
   perfMode: boolean;
   onTogglePerf: () => void;
-  invertSwipeX: boolean;
-  onToggleInvertSwipeX: () => void;
 }
 
 export function HUD({
@@ -18,8 +16,6 @@ export function HUD({
   onToggleMusic,
   perfMode,
   onTogglePerf,
-  invertSwipeX,
-  onToggleInvertSwipeX,
 }: HUDProps) {
   return (
     <div className="pointer-events-auto flex w-full items-start justify-between gap-3 px-3 pt-3 sm:px-5 sm:pt-4">
@@ -43,13 +39,6 @@ export function HUD({
           className="rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-xs font-medium text-slate-100 backdrop-blur hover:bg-white/10 sm:text-sm"
         >
           Perf: {perfMode ? "On" : "Off"}
-        </button>
-        <button
-          type="button"
-          onClick={onToggleInvertSwipeX}
-          className="rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-xs font-medium text-slate-100 backdrop-blur hover:bg-white/10 sm:text-sm"
-        >
-          Swipe X: {invertSwipeX ? "Inverted" : "Normal"}
         </button>
         <button
           type="button"

@@ -116,10 +116,6 @@ export class GameEngine {
     return this.audio.getMusicEnabled();
   }
 
-  setInvertHorizontalSwipe(enabled: boolean) {
-    this.input.setInvertHorizontalSwipe(enabled);
-  }
-
   setPerformanceMode(v: boolean) {
     this.perf = v;
     this.applyPixelRatio();

@@ -13,7 +13,6 @@ export type GamePhase =
 interface GameSceneProps {
   phase: GamePhase;
   performanceMode: boolean;
-  invertSwipeX: boolean;
   onHudUpdate: (h: HudSnapshot) => void;
   onGameOver: (p: { score: number; coins: number; best: number }) => void;
   onCrash: () => void;
@@ -25,7 +24,6 @@ interface GameSceneProps {
 export function GameScene({
   phase,
   performanceMode,
-  invertSwipeX,
   onHudUpdate,
   onGameOver,
   onCrash,
@@ -77,10 +75,6 @@ export function GameScene({
   useEffect(() => {
     engineRef.current?.setPerformanceMode(performanceMode);
   }, [performanceMode]);
-
-  useEffect(() => {
-    engineRef.current?.setInvertHorizontalSwipe(invertSwipeX);
-  }, [invertSwipeX]);
 
   useEffect(() => {
     engineRef.current?.setPaused(phase === "paused" || phase === "countdown");

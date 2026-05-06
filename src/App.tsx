@@ -8,12 +8,7 @@ import { GameOver } from "./components/GameOver";
 import { TutorialOverlay } from "./components/TutorialOverlay";
 import type { HudSnapshot } from "./game/types";
 import type { GameEngine } from "./game/GameEngine";
-import {
-  STORAGE_BEST,
-  STORAGE_INVERT_SWIPE_X,
-  STORAGE_PERF,
-  STORAGE_TUTORIAL,
-} from "./game/constants";
+import { STORAGE_BEST, STORAGE_PERF, STORAGE_TUTORIAL } from "./game/constants";
 
 const initialHud: HudSnapshot = {
   score: 0,
@@ -30,9 +25,6 @@ export default function App() {
   const [hud, setHud] = useState<HudSnapshot>(initialHud);
   const [perfMode, setPerfMode] = useState(() => localStorage.getItem(STORAGE_PERF) === "1");
   const [musicOn, setMusicOn] = useState(() => localStorage.getItem("skyhook_music_enabled") !== "0");
-  const [invertSwipeX, setInvertSwipeX] = useState(
-    () => localStorage.getItem(STORAGE_INVERT_SWIPE_X) === "1",
-  );
 
   const [beginPlayToken, setBeginPlayToken] = useState(0);
 
@@ -52,11 +44,6 @@ export default function App() {
     localStorage.setItem("skyhook_music_enabled", musicOn ? "1" : "0");
     engineRef.current?.setMusicEnabled(musicOn);
   }, [musicOn]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_INVERT_SWIPE_X, invertSwipeX ? "1" : "0");
-    engineRef.current?.setInvertHorizontalSwipe(invertSwipeX);
-  }, [invertSwipeX]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -96,8 +83,7 @@ export default function App() {
   const handleEngineReady = useCallback((engine: GameEngine) => {
     engineRef.current = engine;
     engine.setMusicEnabled(musicOn);
-    engine.setInvertHorizontalSwipe(invertSwipeX);
-  }, [invertSwipeX, musicOn]);
+  }, [musicOn]);
 
   const startTutorialFlow = () => {
     const seen = localStorage.getItem(STORAGE_TUTORIAL) === "1";
@@ -147,7 +133,6 @@ export default function App() {
       <GameScene
         phase={phase}
         performanceMode={perfMode}
-        invertSwipeX={invertSwipeX}
         onHudUpdate={onHudUpdate}
         onGameOver={onGameOver}
         onCrash={onCrash}
@@ -185,8 +170,6 @@ export default function App() {
             onToggleMusic={() => setMusicOn((m) => !m)}
             perfMode={perfMode}
             onTogglePerf={() => setPerfMode((p) => !p)}
-            invertSwipeX={invertSwipeX}
-            onToggleInvertSwipeX={() => setInvertSwipeX((v) => !v)}
           />
         )}
 
@@ -196,8 +179,6 @@ export default function App() {
               onPlay={startTutorialFlow}
               perfMode={perfMode}
               onTogglePerf={() => setPerfMode((p) => !p)}
-              invertSwipeX={invertSwipeX}
-              onToggleInvertSwipeX={() => setInvertSwipeX((v) => !v)}
             />
           )}
 
