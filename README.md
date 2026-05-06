@@ -49,6 +49,8 @@ Live site (after the workflow succeeds):
 2. In the repo on GitHub: **Settings → Pages → Build and deployment → Source**: select **GitHub Actions** (not “Deploy from a branch”).
 3. Open the **Actions** tab and confirm the **Deploy to GitHub Pages** workflow completed; the Pages URL appears on the workflow run and under Pages settings.
 
+If the workflow fails at **deploy-pages** with **404 / “Ensure GitHub Pages has been enabled”**, Pages was still pointed at “Deploy from a branch.” Switch **Source** to **GitHub Actions**, save, then in **Actions** open the failed run and choose **Re-run all jobs** (or push any commit to `main`).
+
 ### Other hosts
 
 After `npm run build`, upload the `dist/` folder:
