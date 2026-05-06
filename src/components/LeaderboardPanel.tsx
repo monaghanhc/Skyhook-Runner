@@ -9,7 +9,7 @@ interface LeaderboardPanelProps {
 
 export function LeaderboardPanel({ entries, loading, error, onRefresh }: LeaderboardPanelProps) {
   return (
-    <div className="pointer-events-auto mt-6 w-full max-w-md rounded-2xl border border-white/15 bg-slate-950/65 p-4 text-left backdrop-blur">
+    <div className="pointer-events-auto w-full rounded-2xl border border-white/15 bg-slate-950/65 p-4 text-left backdrop-blur">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-cyan-200">Global Top Scores</h3>
         <button

@@ -7,6 +7,7 @@ import { PauseOverlay } from "./components/PauseOverlay";
 import { GameOver } from "./components/GameOver";
 import { TutorialOverlay } from "./components/TutorialOverlay";
 import { TutorialInGameTips } from "./components/TutorialInGameTips";
+import { LeaderboardPanel } from "./components/LeaderboardPanel";
 import type { HudSnapshot } from "./game/types";
 import type { GameEngine } from "./game/GameEngine";
 import { STORAGE_BEST, STORAGE_PERF, STORAGE_TUTORIAL, STORAGE_USERNAME } from "./game/constants";
@@ -51,6 +52,7 @@ export default function App() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
   const [leaderboardError, setLeaderboardError] = useState<string | null>(null);
+  const [showLeaderboardModal, setShowLeaderboardModal] = useState(false);
   const [submitBusy, setSubmitBusy] = useState(false);
   const [submitMessage, setSubmitMessage] = useState<string | null>(null);
 
@@ -186,6 +188,7 @@ export default function App() {
     setCountdown(null);
     setPlayMode("normal");
     setShowTutorialTips(true);
+    setShowLeaderboardModal(false);
   };
 
   const postLeaderboardScore = useCallback(async () => {
@@ -268,10 +271,10 @@ export default function App() {
             <MainMenu
               onPlay={startTutorialFlow}
               onTutorial={beginTutorialRun}
-              leaderboard={leaderboard}
-              leaderboardLoading={leaderboardLoading}
-              leaderboardError={leaderboardError}
-              onRefreshLeaderboard={() => void refreshLeaderboard()}
+              onOpenLeaderboard={() => {
+                setShowLeaderboardModal(true);
+                void refreshLeaderboard();
+              }}
               perfMode={perfMode}
               onTogglePerf={() => setPerfMode((p) => !p)}
             />
@@ -320,6 +323,31 @@ export default function App() {
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-slate-950/35 backdrop-blur-[2px]">
           <div className="text-7xl font-black text-white drop-shadow-[0_0_40px_rgba(34,211,238,0.55)] sm:text-8xl">
             {countdown === "go" ? "GO!" : countdown}
+          </div>
+        </div>
+      )}
+
+      {phase === "menu" && showLeaderboardModal && (
+        <div className="pointer-events-auto absolute inset-0 flex items-center justify-center bg-slate-950/60 px-4 backdrop-blur-[2px]">
+          <div className="w-full max-w-lg rounded-2xl border border-white/15 bg-slate-950/90 p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-cyan-200">
+                Leaderboard
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowLeaderboardModal(false)}
+                className="rounded-md border border-white/20 px-2 py-1 text-xs text-slate-200 hover:bg-white/10"
+              >
+                Close
+              </button>
+            </div>
+            <LeaderboardPanel
+              entries={leaderboard}
+              loading={leaderboardLoading}
+              error={leaderboardError}
+              onRefresh={() => void refreshLeaderboard()}
+            />
           </div>
         </div>
       )}

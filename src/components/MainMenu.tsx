@@ -1,13 +1,7 @@
-import type { LeaderboardEntry } from "../game/leaderboard";
-import { LeaderboardPanel } from "./LeaderboardPanel";
-
 interface MainMenuProps {
   onPlay: () => void;
   onTutorial: () => void;
-  leaderboard: LeaderboardEntry[];
-  leaderboardLoading: boolean;
-  leaderboardError: string | null;
-  onRefreshLeaderboard: () => void;
+  onOpenLeaderboard: () => void;
   perfMode: boolean;
   onTogglePerf: () => void;
 }
@@ -15,10 +9,7 @@ interface MainMenuProps {
 export function MainMenu({
   onPlay,
   onTutorial,
-  leaderboard,
-  leaderboardLoading,
-  leaderboardError,
-  onRefreshLeaderboard,
+  onOpenLeaderboard,
   perfMode,
   onTogglePerf,
 }: MainMenuProps) {
@@ -59,13 +50,14 @@ export function MainMenu({
         >
           Performance mode: {perfMode ? "On" : "Off"}
         </button>
+        <button
+          type="button"
+          onClick={onOpenLeaderboard}
+          className="rounded-full border border-white/15 bg-white/5 px-6 py-3 text-sm font-medium text-slate-200 transition hover:bg-white/10"
+        >
+          Leaderboard
+        </button>
       </div>
-      <LeaderboardPanel
-        entries={leaderboard}
-        loading={leaderboardLoading}
-        error={leaderboardError}
-        onRefresh={onRefreshLeaderboard}
-      />
     </div>
   );
 }
