@@ -163,7 +163,8 @@ export class InputManager {
 
     let handled = false;
     if (isLaneSwipe) {
-      this.lanePulse = dx < 0 ? -1 : 1;
+      // Touch horizontal swipe should move in the same on-screen direction.
+      this.lanePulse = dx < 0 ? 1 : -1;
       handled = true;
     } else if (isVerticalSwipe) {
       if (dy < 0) this.jump = true;
@@ -171,7 +172,7 @@ export class InputManager {
       handled = true;
     } else if (adx > this.swipeThreshold || ady > this.swipeThreshold) {
       if (adx >= ady) {
-        this.lanePulse = dx < 0 ? -1 : 1;
+        this.lanePulse = dx < 0 ? 1 : -1;
       } else if (dy < 0) {
         this.jump = true;
       } else {
