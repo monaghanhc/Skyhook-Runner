@@ -24,6 +24,8 @@ export class InputManager {
   private readonly swipeThreshold = 36;
   /** Horizontal swipe must beat vertical by this ratio to count as lane change */
   private readonly laneSwipeDominance = 1.22;
+  /** Max tap movement (px) to still count as a grapple tap */
+  private readonly grappleTapThreshold = 26;
 
   private canvas: HTMLCanvasElement | null = null;
 
@@ -190,7 +192,11 @@ export class InputManager {
   private onPointerUp = (e: PointerEvent) => {
     const dx = e.clientX - this.touchStartX;
     const dy = e.clientY - this.touchStartY;
-    if (this.touchTracking && Math.abs(dx) < 14 && Math.abs(dy) < 14) {
+    if (
+      this.touchTracking &&
+      Math.abs(dx) < this.grappleTapThreshold &&
+      Math.abs(dy) < this.grappleTapThreshold
+    ) {
       this.grapple = true;
     }
     this.touchTracking = false;

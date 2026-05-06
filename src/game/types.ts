@@ -53,7 +53,7 @@ export interface HudSnapshot {
 
 export interface GameCallbacks {
   onHudUpdate: (hud: HudSnapshot) => void;
-  onGameOver: (payload: { score: number; coins: number; best: number }) => void;
+  onGameOver: (payload: { score: number; coins: number; best: number; tutorial: boolean }) => void;
   onCoinPickup?: (worldPosition: THREE.Vector3, lane: LaneIndex) => void;
   onCrash?: () => void;
   onCountdownTick?: (n: number | "go") => void;

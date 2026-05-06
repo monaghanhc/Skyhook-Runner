@@ -43,13 +43,14 @@ export class ObstacleManager {
     this.boxes.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     this.boxes.frustumCulled = false;
 
-    const droneGeo = new THREE.IcosahedronGeometry(0.55, 0);
+    // Duck-under drone: avoid gem-like silhouette so it doesn't read as a pickup.
+    const droneGeo = new THREE.SphereGeometry(0.58, 10, 8);
     const droneMat = new THREE.MeshStandardMaterial({
-      color: new THREE.Color("#ff6688"),
-      emissive: new THREE.Color("#ff2244"),
-      emissiveIntensity: 0.45,
-      metalness: 0.5,
-      roughness: 0.3,
+      color: new THREE.Color("#2a2f3a"),
+      emissive: new THREE.Color("#ff1f3d"),
+      emissiveIntensity: 0.9,
+      metalness: 0.65,
+      roughness: 0.18,
     });
     this.drones = new THREE.InstancedMesh(droneGeo, droneMat, DRONE_CAPACITY);
     this.drones.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
@@ -157,8 +158,9 @@ export class ObstacleManager {
   refreshTransform(o: ManagedObstacle) {
     const lx = LANES[o.lane];
     if (o.meshKind === "drone") {
+      const pulse = 0.9 + Math.sin(performance.now() / 120 + o.poolIndex * 0.4) * 0.12;
       this.dummy.position.set(lx, 1.45, o.z);
-      this.dummy.scale.setScalar(1);
+      this.dummy.scale.setScalar(pulse);
       this.dummy.rotation.set(
         performance.now() / 900,
         performance.now() / 700,

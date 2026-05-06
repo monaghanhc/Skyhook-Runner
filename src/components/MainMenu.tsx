@@ -1,10 +1,11 @@
 interface MainMenuProps {
   onPlay: () => void;
+  onTutorial: () => void;
   perfMode: boolean;
   onTogglePerf: () => void;
 }
 
-export function MainMenu({ onPlay, perfMode, onTogglePerf }: MainMenuProps) {
+export function MainMenu({ onPlay, onTutorial, perfMode, onTogglePerf }: MainMenuProps) {
   return (
     <div className="pointer-events-auto flex min-h-[42vh] flex-col items-center justify-center px-6 text-center">
       <p className="mb-2 text-xs uppercase tracking-[0.35em] text-cyan-200/80">
@@ -23,6 +24,13 @@ export function MainMenu({ onPlay, perfMode, onTogglePerf }: MainMenuProps) {
           className="rounded-full bg-gradient-to-r from-cyan-500 to-fuchsia-500 px-10 py-3 text-lg font-semibold text-slate-950 shadow-lg shadow-fuchsia-500/25 transition hover:brightness-110 active:scale-[0.98]"
         >
           Play
+        </button>
+        <button
+          type="button"
+          onClick={onTutorial}
+          className="rounded-full border border-cyan-300/50 bg-cyan-400/10 px-6 py-3 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-300/20"
+        >
+          Tutorial Mode
         </button>
         <button
           type="button"

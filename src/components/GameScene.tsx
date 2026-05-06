@@ -14,10 +14,11 @@ interface GameSceneProps {
   phase: GamePhase;
   performanceMode: boolean;
   onHudUpdate: (h: HudSnapshot) => void;
-  onGameOver: (p: { score: number; coins: number; best: number }) => void;
+  onGameOver: (p: { score: number; coins: number; best: number; tutorial: boolean }) => void;
   onCrash: () => void;
   onCoinWorldPickup: (x: number, y: number, z: number) => void;
   beginPlayToken: number;
+  playMode: "normal" | "tutorial";
   onEngineReady?: (engine: GameEngine) => void;
 }
 
@@ -29,6 +30,7 @@ export function GameScene({
   onCrash,
   onCoinWorldPickup,
   beginPlayToken,
+  playMode,
   onEngineReady,
 }: GameSceneProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -88,9 +90,9 @@ export function GameScene({
 
   useEffect(() => {
     if (beginPlayToken > 0) {
-      engineRef.current?.beginPlay();
+      engineRef.current?.beginPlay(playMode);
     }
-  }, [beginPlayToken]);
+  }, [beginPlayToken, playMode]);
 
   return (
     <canvas

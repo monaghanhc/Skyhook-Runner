@@ -11,6 +11,11 @@ const GAP_MIN_SCORE = 520;
 /** Minimum Z separation between obstacles in the same lane */
 const LANE_BLOCK_SPACING_INTRO = 5.8;
 const LANE_BLOCK_SPACING_NORMAL = 4.2;
+/** Keep grapple chunks fair around the hook and touchdown windows. */
+const GAP_SAFE_APPROACH = 3.2;
+const GAP_SAFE_LANDING = 4.4;
+/** Prevent full 3-lane lockouts at nearly the same depth. */
+const ALL_LANES_BLOCK_WINDOW_Z = 2.2;
 
 export interface FloorSegment {
   start: number;
@@ -40,6 +45,7 @@ export function planChunk(
   id: number,
   score: number,
   menuOnly = false,
+  tutorialMode = false,
 ): ChunkPlan {
   const endZ = startZ + CHUNK_LENGTH;
   if (menuOnly) {
@@ -58,6 +64,7 @@ export function planChunk(
 
   const difficulty = Math.min(1, score / DIFFICULTY_SCORE_STEP);
   const gapEligible =
+    !tutorialMode &&
     id >= GAP_MIN_CHUNK_ID && score >= GAP_MIN_SCORE && Math.random() < 0.06 + difficulty * 0.16;
   const gapRoll = gapEligible;
 
@@ -78,7 +85,7 @@ export function planChunk(
       { start: gapEnd, end: endZ },
     ];
     const lane = randLane();
-    grapple = { lane, z: gapStart - 3.5, chunkId: id };
+    grapple = { lane, z: gapStart - 4.2, chunkId: id };
   } else {
     segments = [{ start: startZ, end: endZ }];
     gapStartZ = startZ;
@@ -88,11 +95,32 @@ export function planChunk(
   const obstacles: ChunkPlan["obstacles"] = [];
   const occupied: { lane: LaneIndex; z: number }[] = [];
 
+  if (gapRoll && grapple) {
+    // Reserve some buffer on the grapple lane around takeoff and landing.
+    occupied.push({ lane: grapple.lane, z: gapStartZ - 1.6 });
+    occupied.push({ lane: grapple.lane, z: gapEndZ + 1.8 });
+  }
+
   const laneSpacing =
     id < INTRO_CHUNK_END ? LANE_BLOCK_SPACING_INTRO : LANE_BLOCK_SPACING_NORMAL;
 
   const tryPushObs = (lane: LaneIndex, z: number, kind: ObstacleKind) => {
     if (z < startZ + 3 || z > endZ - 3) return false;
+    if (gapRoll && grapple && lane === grapple.lane) {
+      const inApproach = z > gapStartZ - GAP_SAFE_APPROACH && z < gapStartZ + 1.1;
+      const inLanding = z > gapEndZ - 0.8 && z < gapEndZ + GAP_SAFE_LANDING;
+      if (inApproach || inLanding) return false;
+    }
+
+    const nearby = occupied.filter((o) => Math.abs(o.z - z) < ALL_LANES_BLOCK_WINDOW_Z);
+    if (nearby.length > 0) {
+      const laneSet = new Set<number>();
+      for (const o of nearby) laneSet.add(o.lane);
+      laneSet.add(lane);
+      // Keep one lane open in any short reaction window.
+      if (laneSet.size >= 3) return false;
+    }
+
     for (const o of occupied) {
       if (o.lane === lane && Math.abs(o.z - z) < laneSpacing) return false;
     }
@@ -102,7 +130,10 @@ export function planChunk(
   };
 
   let obsCount: number;
-  if (id < INTRO_CHUNK_END) {
+  if (tutorialMode) {
+    obsCount = id < 5 ? 1 : 1 + Math.floor(Math.random() * 2);
+    obsCount = Math.min(2, Math.max(1, obsCount));
+  } else if (id < INTRO_CHUNK_END) {
     if (id <= 1) obsCount = Math.random() < 0.55 ? 1 : 0;
     else if (id <= 4) obsCount = 1;
     else obsCount = Math.random() < 0.85 ? 1 : 2;
@@ -111,10 +142,16 @@ export function planChunk(
     obsCount = Math.min(3, Math.max(1, obsCount));
   } else {
     obsCount = 2 + Math.floor(difficulty * 4 + Math.random() * 2);
-    obsCount = Math.min(6, obsCount);
+    obsCount = Math.min(5, obsCount);
   }
 
   function pickObstacleKind(): ObstacleKind {
+    if (tutorialMode) {
+      const roll = Math.random();
+      if (roll < 0.48) return "low";
+      if (roll < 0.8) return "high";
+      return "wall";
+    }
     if (id < INTRO_CHUNK_END) return "low";
     const roll = Math.random();
     if (id < MID_CHUNK_END) {

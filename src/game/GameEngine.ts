@@ -83,6 +83,7 @@ export class GameEngine {
   private edgeSharedMat!: THREE.MeshStandardMaterial;
 
   private dead = false;
+  private tutorialRun = false;
   /** Cancels delayed game-over if a new run starts before the timeout fires */
   private runGeneration = 0;
 
@@ -134,10 +135,11 @@ export class GameEngine {
   }
 
   /** Begin gameplay after countdown */
-  beginPlay() {
+  beginPlay(mode: "normal" | "tutorial" = "normal") {
     this.runGeneration++;
     this.mode = "playing";
     this.attractMode = false;
+    this.tutorialRun = mode === "tutorial";
     this.dead = false;
     this.resetWorld(false);
     this.paused = false;
@@ -348,7 +350,7 @@ export class GameEngine {
 
   private spawnChunkAt(startZ: number, score: number, menuStyle: boolean) {
     const id = this.nextChunkId++;
-    const plan = planChunk(startZ, id, menuStyle ? 0 : score, menuStyle);
+    const plan = planChunk(startZ, id, menuStyle ? 0 : score, menuStyle, this.tutorialRun && !menuStyle);
     const floors: THREE.Mesh[] = [];
     const anchors: THREE.Mesh[] = [];
     const obstacleRefs: ManagedObstacle[] = [];
@@ -488,10 +490,9 @@ export class GameEngine {
     this.runAge += dt;
 
     if (!menuStyle) {
-      this.forwardSpeed = Math.min(
-        MAX_SPEED,
-        INITIAL_SPEED + this.runAge * SPEED_RAMP_PER_SEC,
-      );
+      const speedCap = this.tutorialRun ? Math.min(MAX_SPEED, INITIAL_SPEED + 8.5) : MAX_SPEED;
+      const ramp = this.tutorialRun ? SPEED_RAMP_PER_SEC * 0.58 : SPEED_RAMP_PER_SEC;
+      this.forwardSpeed = Math.min(speedCap, INITIAL_SPEED + this.runAge * ramp);
     } else {
       this.forwardSpeed = INITIAL_SPEED * 0.82;
     }
@@ -637,14 +638,19 @@ export class GameEngine {
     let best = Number.isFinite(bestRaw) ? bestRaw : 0;
     const dist = Math.max(0, this.player.z - this.distanceBase);
     const score = Math.floor(dist * 12) + this.coinsCollected * 125;
-    if (score > best) {
+    if (!this.tutorialRun && score > best) {
       best = score;
       localStorage.setItem(STORAGE_BEST, String(best));
     }
 
     window.setTimeout(() => {
       if (generation !== this.runGeneration) return;
-      this.callbacks.onGameOver({ score, coins: this.coinsCollected, best });
+      this.callbacks.onGameOver({
+        score,
+        coins: this.coinsCollected,
+        best,
+        tutorial: this.tutorialRun,
+      });
     }, fromFall ? 200 : 60);
   }
 }

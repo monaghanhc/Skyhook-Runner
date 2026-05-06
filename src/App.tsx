@@ -27,6 +27,7 @@ export default function App() {
   const [musicOn, setMusicOn] = useState(() => localStorage.getItem("skyhook_music_enabled") !== "0");
 
   const [beginPlayToken, setBeginPlayToken] = useState(0);
+  const [playMode, setPlayMode] = useState<"normal" | "tutorial">("normal");
 
   const [countdown, setCountdown] = useState<number | "go" | null>(null);
 
@@ -60,8 +61,11 @@ export default function App() {
     setHud(next);
   }, []);
 
-  const onGameOver = useCallback((p: { score: number; coins: number; best: number }) => {
-    setGameOverStats(p);
+  const onGameOver = useCallback((p: { score: number; coins: number; best: number; tutorial: boolean }) => {
+    setGameOverStats({ score: p.score, coins: p.coins, best: p.best });
+    if (p.tutorial) {
+      localStorage.setItem(STORAGE_TUTORIAL, "1");
+    }
     setPhase("gameover");
   }, []);
 
@@ -86,6 +90,7 @@ export default function App() {
   }, [musicOn]);
 
   const startTutorialFlow = () => {
+    setPlayMode("normal");
     const seen = localStorage.getItem(STORAGE_TUTORIAL) === "1";
     if (!seen) {
       setPhase("tutorial");
@@ -97,6 +102,11 @@ export default function App() {
   const beginCountdown = () => {
     setPhase("countdown");
     setCountdown(3);
+  };
+
+  const beginTutorialRun = () => {
+    setPlayMode("tutorial");
+    beginCountdown();
   };
 
   useEffect(() => {
@@ -120,12 +130,14 @@ export default function App() {
   }, [phase, countdown]);
 
   const restartFromGameOver = () => {
+    setPlayMode("normal");
     beginCountdown();
   };
 
   const goMenu = () => {
     setPhase("menu");
     setCountdown(null);
+    setPlayMode("normal");
   };
 
   return (
@@ -138,6 +150,7 @@ export default function App() {
         onCrash={onCrash}
         onCoinWorldPickup={onCoinWorldPickup}
         beginPlayToken={beginPlayToken}
+        playMode={playMode}
         onEngineReady={handleEngineReady}
       />
 
@@ -177,6 +190,7 @@ export default function App() {
           {phase === "menu" && (
             <MainMenu
               onPlay={startTutorialFlow}
+              onTutorial={beginTutorialRun}
               perfMode={perfMode}
               onTogglePerf={() => setPerfMode((p) => !p)}
             />
@@ -186,7 +200,7 @@ export default function App() {
             <TutorialOverlay
               onDismiss={() => {
                 localStorage.setItem(STORAGE_TUTORIAL, "1");
-                beginCountdown();
+                beginTutorialRun();
               }}
             />
           )}
