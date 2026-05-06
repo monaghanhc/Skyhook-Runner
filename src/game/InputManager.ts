@@ -101,7 +101,17 @@ export class InputManager {
     // Digital one-shots cleared via consume*
   }
 
+  private isTypingTarget(target: EventTarget | null): boolean {
+    const el = target as HTMLElement | null;
+    if (!el) return false;
+    const tag = el.tagName;
+    if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return true;
+    if ((el as HTMLElement).isContentEditable) return true;
+    return false;
+  }
+
   private onKeyDown = (e: KeyboardEvent) => {
+    if (this.isTypingTarget(e.target)) return;
     if (e.repeat) return;
     const k = e.code;
     this.keys.add(k);
@@ -138,6 +148,7 @@ export class InputManager {
   };
 
   private onKeyUp = (e: KeyboardEvent) => {
+    if (this.isTypingTarget(e.target)) return;
     const k = e.code;
     this.keys.delete(k);
     if (k === "ArrowLeft" || k === "KeyA") this.left = false;
