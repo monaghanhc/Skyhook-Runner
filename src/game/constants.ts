@@ -11,8 +11,8 @@ export const PLAYER_SLIDE_HALF_HEIGHT = 0.38;
 /** Slower start; ramps up via SPEED_RAMP_PER_SEC */
 export const INITIAL_SPEED = 9;
 export const MAX_SPEED = 34;
-/** Gentle early acceleration; difficulty still ramps via score/chunk id */
-export const SPEED_RAMP_PER_SEC = 0.028;
+/** Gradually ramps difficulty pressure without kicking in too fast early */
+export const SPEED_RAMP_PER_SEC = 0.038;
 export const CHUNKS_AHEAD = 5;
 export const CHUNKS_BEHIND = 2;
 /** Slightly forgiving window when gaps unlock */

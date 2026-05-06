@@ -14,11 +14,16 @@ export class InputManager {
   private slide = false;
   private grapple = false;
   private pause = false;
+  /** Touch-only discrete lane step (+1 right / -1 left), consumed in laneIntent */
+  private lanePulse: -1 | 0 | 1 = 0;
 
   private touchStartX = 0;
   private touchStartY = 0;
   private touchTracking = false;
-  private readonly swipeThreshold = 42;
+  /** Minimum swipe distance (px) */
+  private readonly swipeThreshold = 36;
+  /** Horizontal swipe must beat vertical by this ratio to count as lane change */
+  private readonly laneSwipeDominance = 1.22;
 
   private canvas: HTMLCanvasElement | null = null;
 
@@ -82,6 +87,9 @@ export class InputManager {
   }
 
   laneIntent(): -1 | 0 | 1 {
+    const pulse = this.lanePulse;
+    this.lanePulse = 0;
+    if (pulse !== 0) return pulse;
     if (this.left && !this.right) return -1;
     if (this.right && !this.left) return 1;
     return 0;
@@ -144,18 +152,35 @@ export class InputManager {
     if (!this.touchTracking) return;
     const dx = e.clientX - this.touchStartX;
     const dy = e.clientY - this.touchStartY;
-    if (Math.abs(dx) > this.swipeThreshold || Math.abs(dy) > this.swipeThreshold) {
-      if (Math.abs(dx) > Math.abs(dy)) {
-        if (dx < 0) this.left = true;
-        else this.right = true;
-        setTimeout(() => {
-          this.left = false;
-          this.right = false;
-        }, 80);
+    const adx = Math.abs(dx);
+    const ady = Math.abs(dy);
+    if (adx <= this.swipeThreshold && ady <= this.swipeThreshold) return;
+
+    const isLaneSwipe =
+      adx >= ady * this.laneSwipeDominance && adx > this.swipeThreshold;
+    const isVerticalSwipe =
+      ady >= adx * this.laneSwipeDominance && ady > this.swipeThreshold;
+
+    let handled = false;
+    if (isLaneSwipe) {
+      this.lanePulse = dx < 0 ? -1 : 1;
+      handled = true;
+    } else if (isVerticalSwipe) {
+      if (dy < 0) this.jump = true;
+      else this.slide = true;
+      handled = true;
+    } else if (adx > this.swipeThreshold || ady > this.swipeThreshold) {
+      if (adx >= ady) {
+        this.lanePulse = dx < 0 ? -1 : 1;
+      } else if (dy < 0) {
+        this.jump = true;
       } else {
-        if (dy < 0) this.jump = true;
-        else this.slide = true;
+        this.slide = true;
       }
+      handled = true;
+    }
+
+    if (handled) {
       this.touchTracking = false;
       e.preventDefault();
     }

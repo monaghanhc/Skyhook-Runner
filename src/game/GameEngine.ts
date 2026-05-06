@@ -19,6 +19,7 @@ import { aabbIntersect } from "./CollisionSystem";
 import { findGrappleTarget } from "./GrappleSystem";
 import type { GameCallbacks, GrappleAnchor } from "./types";
 import { ParticlePool } from "./particles";
+import { BackgroundScenery } from "./BackgroundScenery";
 
 type EngineMode = "menu" | "playing";
 
@@ -86,6 +87,8 @@ export class GameEngine {
   private runGeneration = 0;
 
   private animationId = 0;
+  private backdrop!: BackgroundScenery;
+  private backdropTime = 0;
 
   constructor(options: EngineControllerOptions) {
     this.canvas = options.canvas;
@@ -155,6 +158,7 @@ export class GameEngine {
     cancelAnimationFrame(this.animationId);
     window.removeEventListener("resize", this.onResize);
     this.input.detach();
+    this.backdrop.dispose(this.scene);
     this.particles.dispose(this.scene);
     this.coins.dispose(this.scene);
     this.obstacles.dispose(this.scene);
@@ -241,6 +245,8 @@ export class GameEngine {
       }),
     );
     scene.add(stars);
+
+    this.backdrop = new BackgroundScenery(scene, this.perf);
 
     // Player visual
     const bodyMat = new THREE.MeshStandardMaterial({
@@ -468,6 +474,9 @@ export class GameEngine {
     this.obstacles.updateAnimations();
     this.coins.updateMatrices();
     this.particles.update(dtRaw);
+
+    this.backdropTime += dtRaw;
+    this.backdrop.update(this.player.z, this.backdropTime);
 
     this.renderer.render(this.scene, this.camera);
     this.animationId = requestAnimationFrame(this.loop);

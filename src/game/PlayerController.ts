@@ -32,6 +32,9 @@ export class PlayerController {
   grappleEndZ = 0;
   grappleLane: LaneIndex = 1;
 
+  /** Prevents one long swipe / held key from advancing multiple lanes in one go */
+  private lastLaneIntent: -1 | 0 | 1 = 0;
+
   reset(spawnZ: number) {
     this.lane = 1;
     this.targetLane = 1;
@@ -43,6 +46,7 @@ export class PlayerController {
     this.slideTimer = 0;
     this.laneLerp = 1;
     this.grappleT = 0;
+    this.lastLaneIntent = 0;
   }
 
   beginGrapple(anchor: GrappleAnchor, gapEndZ: number) {
@@ -91,10 +95,13 @@ export class PlayerController {
       return;
     }
 
-    // Lane switching
+    // Lane switching — one step per distinct swipe direction / key edge (L / center / R)
     if (laneIntent !== 0) {
-      this.targetLane = this.getLaneFromInput(laneIntent);
+      if (laneIntent !== this.lastLaneIntent) {
+        this.targetLane = this.getLaneFromInput(laneIntent);
+      }
     }
+    this.lastLaneIntent = laneIntent;
     const targetX = LANES[this.targetLane];
     this.x = THREE.MathUtils.lerp(this.x, targetX, dt / LANE_SWITCH_TIME);
     if (Math.abs(this.x - targetX) < 0.05) {
