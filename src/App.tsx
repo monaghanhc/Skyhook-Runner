@@ -94,7 +94,7 @@ export default function App() {
     setLeaderboardLoading(true);
     setLeaderboardError(null);
     try {
-      const rows = await fetchLeaderboard(20);
+      const rows = await fetchLeaderboard(10);
       setLeaderboard(rows);
     } catch (err) {
       setLeaderboardError(leaderboardTroubleshootingHint(err));

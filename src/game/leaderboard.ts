@@ -48,7 +48,7 @@ async function extractErrorDetails(res: Response): Promise<string | undefined> {
   }
 }
 
-export async function fetchLeaderboard(limit = 20): Promise<LeaderboardEntry[]> {
+export async function fetchLeaderboard(limit = 10): Promise<LeaderboardEntry[]> {
   if (!isConfigured()) return [];
   const url = `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?select=id,username,score,created_at&order=score.desc,created_at.asc&limit=${limit}`;
   const res = await fetch(url, { headers: headers() });
