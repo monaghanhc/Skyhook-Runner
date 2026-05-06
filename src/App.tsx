@@ -6,9 +6,16 @@ import { HUD } from "./components/HUD";
 import { PauseOverlay } from "./components/PauseOverlay";
 import { GameOver } from "./components/GameOver";
 import { TutorialOverlay } from "./components/TutorialOverlay";
+import { TutorialInGameTips } from "./components/TutorialInGameTips";
 import type { HudSnapshot } from "./game/types";
 import type { GameEngine } from "./game/GameEngine";
-import { STORAGE_BEST, STORAGE_PERF, STORAGE_TUTORIAL } from "./game/constants";
+import { STORAGE_BEST, STORAGE_PERF, STORAGE_TUTORIAL, STORAGE_USERNAME } from "./game/constants";
+import {
+  fetchLeaderboard,
+  leaderboardConfigured,
+  submitScore,
+  type LeaderboardEntry,
+} from "./game/leaderboard";
 
 const initialHud: HudSnapshot = {
   score: 0,
@@ -30,12 +37,20 @@ export default function App() {
   const [playMode, setPlayMode] = useState<"normal" | "tutorial">("normal");
 
   const [countdown, setCountdown] = useState<number | "go" | null>(null);
+  const [showTutorialTips, setShowTutorialTips] = useState(true);
 
   const [flash, setFlash] = useState(0);
   const [coinPopups, setCoinPopups] = useState<{ id: number; text: string; x: string; y: string }[]>([]);
   const popupId = useRef(0);
 
   const [gameOverStats, setGameOverStats] = useState({ score: 0, coins: 0, best: 0 });
+  const [lastRunTutorial, setLastRunTutorial] = useState(false);
+  const [username, setUsername] = useState(() => localStorage.getItem(STORAGE_USERNAME) ?? "");
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(false);
+  const [leaderboardError, setLeaderboardError] = useState<string | null>(null);
+  const [submitBusy, setSubmitBusy] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState<string | null>(null);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_PERF, perfMode ? "1" : "0");
@@ -45,6 +60,32 @@ export default function App() {
     localStorage.setItem("skyhook_music_enabled", musicOn ? "1" : "0");
     engineRef.current?.setMusicEnabled(musicOn);
   }, [musicOn]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_USERNAME, username);
+  }, [username]);
+
+  const refreshLeaderboard = useCallback(async () => {
+    if (!leaderboardConfigured()) {
+      setLeaderboard([]);
+      setLeaderboardError("Leaderboard is not configured yet.");
+      return;
+    }
+    setLeaderboardLoading(true);
+    setLeaderboardError(null);
+    try {
+      const rows = await fetchLeaderboard(20);
+      setLeaderboard(rows);
+    } catch {
+      setLeaderboardError("Could not load leaderboard right now.");
+    } finally {
+      setLeaderboardLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshLeaderboard();
+  }, [refreshLeaderboard]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -63,6 +104,8 @@ export default function App() {
 
   const onGameOver = useCallback((p: { score: number; coins: number; best: number; tutorial: boolean }) => {
     setGameOverStats({ score: p.score, coins: p.coins, best: p.best });
+    setLastRunTutorial(p.tutorial);
+    setSubmitMessage(null);
     if (p.tutorial) {
       localStorage.setItem(STORAGE_TUTORIAL, "1");
     }
@@ -106,6 +149,7 @@ export default function App() {
 
   const beginTutorialRun = () => {
     setPlayMode("tutorial");
+    setShowTutorialTips(true);
     beginCountdown();
   };
 
@@ -131,6 +175,7 @@ export default function App() {
 
   const restartFromGameOver = () => {
     setPlayMode("normal");
+    setShowTutorialTips(true);
     beginCountdown();
   };
 
@@ -138,7 +183,36 @@ export default function App() {
     setPhase("menu");
     setCountdown(null);
     setPlayMode("normal");
+    setShowTutorialTips(true);
   };
+
+  const postLeaderboardScore = useCallback(async () => {
+    if (lastRunTutorial) return;
+    if (!leaderboardConfigured()) {
+      setSubmitMessage("Leaderboard not configured on this build yet.");
+      return;
+    }
+    const cleanName = username.trim();
+    if (!cleanName) {
+      setSubmitMessage("Enter a username first.");
+      return;
+    }
+    if (gameOverStats.score <= 0) {
+      setSubmitMessage("Score must be greater than zero.");
+      return;
+    }
+    setSubmitBusy(true);
+    setSubmitMessage(null);
+    try {
+      await submitScore(cleanName, gameOverStats.score);
+      setSubmitMessage("Score posted to global leaderboard.");
+      await refreshLeaderboard();
+    } catch {
+      setSubmitMessage("Failed to post score. Try again.");
+    } finally {
+      setSubmitBusy(false);
+    }
+  }, [gameOverStats.score, lastRunTutorial, refreshLeaderboard, username]);
 
   return (
     <div className="relative h-[100dvh] w-full overflow-hidden bg-slate-950 text-slate-50">
@@ -178,6 +252,7 @@ export default function App() {
         {(phase === "playing" || phase === "paused") && (
           <HUD
             hud={hud}
+            tutorialMode={playMode === "tutorial"}
             onPause={() => setPhase("paused")}
             musicOn={musicOn}
             onToggleMusic={() => setMusicOn((m) => !m)}
@@ -191,6 +266,10 @@ export default function App() {
             <MainMenu
               onPlay={startTutorialFlow}
               onTutorial={beginTutorialRun}
+              leaderboard={leaderboard}
+              leaderboardLoading={leaderboardLoading}
+              leaderboardError={leaderboardError}
+              onRefreshLeaderboard={() => void refreshLeaderboard()}
               perfMode={perfMode}
               onTogglePerf={() => setPerfMode((p) => !p)}
             />
@@ -214,11 +293,24 @@ export default function App() {
               score={gameOverStats.score}
               coins={gameOverStats.coins}
               best={gameOverStats.best}
+              tutorialRun={lastRunTutorial}
+              username={username}
+              onUsernameChange={setUsername}
+              onSubmitScore={() => void postLeaderboardScore()}
+              submitDisabled={username.trim().length === 0}
+              submitBusy={submitBusy}
+              submitMessage={submitMessage}
               onRestart={restartFromGameOver}
               onMenu={goMenu}
             />
           )}
         </div>
+
+        {(phase === "playing" || phase === "paused") &&
+          playMode === "tutorial" &&
+          showTutorialTips && (
+            <TutorialInGameTips onDismiss={() => setShowTutorialTips(false)} />
+          )}
       </div>
 
       {/* Countdown overlay */}

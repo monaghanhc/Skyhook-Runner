@@ -29,3 +29,4 @@ export const STORAGE_BEST = "skyhook_best_score";
 export const STORAGE_TUTORIAL = "skyhook_tutorial_seen";
 export const STORAGE_PERF = "skyhook_performance_mode";
 export const STORAGE_MUSIC = "skyhook_music_enabled";
+export const STORAGE_USERNAME = "skyhook_username";

@@ -100,3 +100,44 @@ Toggle **Performance mode** from the main menu or in-game HUD. It lowers fog str
 - Online leaderboards and ghost replays  
 - Haptics on mobile coin pickups and crashes  
 - Optional shader-based rim lighting instead of extra rim meshes  
+
+## Online leaderboard setup (Supabase)
+
+The app can post and fetch global scores when these env vars are set:
+
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+- `VITE_LEADERBOARD_TABLE` (optional, defaults to `leaderboard_scores`)
+
+Create a `.env.local` in the project root:
+
+```bash
+VITE_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
+VITE_SUPABASE_ANON_KEY=YOUR_ANON_KEY
+VITE_LEADERBOARD_TABLE=leaderboard_scores
+```
+
+Create table in Supabase SQL editor:
+
+```sql
+create table if not exists public.leaderboard_scores (
+  id uuid primary key default gen_random_uuid(),
+  username text not null check (char_length(username) between 1 and 20),
+  score integer not null check (score > 0),
+  created_at timestamptz not null default now()
+);
+
+alter table public.leaderboard_scores enable row level security;
+
+create policy "public read leaderboard"
+on public.leaderboard_scores
+for select
+to anon
+using (true);
+
+create policy "public insert leaderboard"
+on public.leaderboard_scores
+for insert
+to anon
+with check (true);
+```

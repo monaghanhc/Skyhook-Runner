@@ -2,6 +2,7 @@ import type { HudSnapshot } from "../game/types";
 
 interface HUDProps {
   hud: HudSnapshot;
+  tutorialMode?: boolean;
   onPause: () => void;
   musicOn: boolean;
   onToggleMusic: () => void;
@@ -11,6 +12,7 @@ interface HUDProps {
 
 export function HUD({
   hud,
+  tutorialMode = false,
   onPause,
   musicOn,
   onToggleMusic,
@@ -23,7 +25,11 @@ export function HUD({
         <Stat label="Score" value={hud.score.toString()} accent="text-cyan-200" />
         <Stat label="Coins" value={hud.coins.toString()} accent="text-amber-200" />
         <Stat label="Speed" value={`${hud.speed.toFixed(1)}`} accent="text-fuchsia-200" />
-        <Stat label="Best" value={hud.best.toString()} accent="text-emerald-200" />
+        <Stat
+          label={tutorialMode ? "Best (off)" : "Best"}
+          value={tutorialMode ? "Not saved" : hud.best.toString()}
+          accent="text-emerald-200"
+        />
       </div>
       <div className="flex flex-wrap justify-end gap-2">
         <button
