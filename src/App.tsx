@@ -14,6 +14,7 @@ import {
   fetchLeaderboard,
   leaderboardConfigHint,
   leaderboardConfigured,
+  leaderboardTroubleshootingHint,
   submitScore,
   type LeaderboardEntry,
 } from "./game/leaderboard";
@@ -77,8 +78,8 @@ export default function App() {
     try {
       const rows = await fetchLeaderboard(20);
       setLeaderboard(rows);
-    } catch {
-      setLeaderboardError("Could not load leaderboard right now.");
+    } catch (err) {
+      setLeaderboardError(leaderboardTroubleshootingHint(err));
     } finally {
       setLeaderboardLoading(false);
     }
@@ -208,8 +209,8 @@ export default function App() {
       await submitScore(cleanName, gameOverStats.score);
       setSubmitMessage("Score posted to global leaderboard.");
       await refreshLeaderboard();
-    } catch {
-      setSubmitMessage("Failed to post score. Try again.");
+    } catch (err) {
+      setSubmitMessage(leaderboardTroubleshootingHint(err));
     } finally {
       setSubmitBusy(false);
     }

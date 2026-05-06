@@ -142,3 +142,9 @@ for insert
 to anon
 with check (true);
 ```
+
+### If posting still fails
+
+- `404`: table name is wrong or table missing. Confirm `VITE_LEADERBOARD_TABLE` and SQL ran.
+- `401/403`: key or policy issue. Use **anon** key and ensure RLS policies for `select` + `insert` exist.
+- `400`: usually schema mismatch (column/type/check constraint mismatch).
