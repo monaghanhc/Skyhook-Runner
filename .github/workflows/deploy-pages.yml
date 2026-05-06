@@ -28,6 +28,10 @@ jobs:
           cache: npm
 
       - name: Install and build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_LEADERBOARD_TABLE: ${{ secrets.VITE_LEADERBOARD_TABLE }}
         run: |
           npm ci
           npm run build
