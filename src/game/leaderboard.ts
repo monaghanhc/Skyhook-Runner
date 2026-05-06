@@ -49,3 +49,7 @@ export async function submitScore(username: string, score: number): Promise<void
 export function leaderboardConfigured(): boolean {
   return isConfigured();
 }
+
+export function leaderboardConfigHint(): string {
+  return "Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in GitHub Actions Secrets or Variables, then redeploy.";
+}

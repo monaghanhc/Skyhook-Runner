@@ -12,6 +12,7 @@ import type { GameEngine } from "./game/GameEngine";
 import { STORAGE_BEST, STORAGE_PERF, STORAGE_TUTORIAL, STORAGE_USERNAME } from "./game/constants";
 import {
   fetchLeaderboard,
+  leaderboardConfigHint,
   leaderboardConfigured,
   submitScore,
   type LeaderboardEntry,
@@ -68,7 +69,7 @@ export default function App() {
   const refreshLeaderboard = useCallback(async () => {
     if (!leaderboardConfigured()) {
       setLeaderboard([]);
-      setLeaderboardError("Leaderboard is not configured yet.");
+      setLeaderboardError(leaderboardConfigHint());
       return;
     }
     setLeaderboardLoading(true);
@@ -189,7 +190,7 @@ export default function App() {
   const postLeaderboardScore = useCallback(async () => {
     if (lastRunTutorial) return;
     if (!leaderboardConfigured()) {
-      setSubmitMessage("Leaderboard not configured on this build yet.");
+      setSubmitMessage(leaderboardConfigHint());
       return;
     }
     const cleanName = username.trim();
