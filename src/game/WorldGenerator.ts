@@ -1,6 +1,17 @@
 import { CHUNK_LENGTH, DIFFICULTY_SCORE_STEP } from "./constants";
 import type { GrappleAnchor, LaneIndex, ObstacleKind } from "./types";
 
+/** Chunks 0..INTRO_END-1: mostly jump-only obstacles, no gaps */
+const INTRO_CHUNK_END = 9;
+/** Chunks INTRO_END..MID_END-1: bridge difficulty before full mix */
+const MID_CHUNK_END = 18;
+/** Gaps require player to grapple — unlock later */
+const GAP_MIN_CHUNK_ID = 14;
+const GAP_MIN_SCORE = 520;
+/** Minimum Z separation between obstacles in the same lane */
+const LANE_BLOCK_SPACING_INTRO = 5.8;
+const LANE_BLOCK_SPACING_NORMAL = 4.2;
+
 export interface FloorSegment {
   start: number;
   end: number;
@@ -46,7 +57,9 @@ export function planChunk(
   }
 
   const difficulty = Math.min(1, score / DIFFICULTY_SCORE_STEP);
-  const gapRoll = Math.random() < 0.12 + difficulty * 0.22 && id > 2;
+  const gapEligible =
+    id >= GAP_MIN_CHUNK_ID && score >= GAP_MIN_SCORE && Math.random() < 0.06 + difficulty * 0.16;
+  const gapRoll = gapEligible;
 
   let segments: FloorSegment[];
   let grapple: GrappleAnchor | undefined;
@@ -75,27 +88,52 @@ export function planChunk(
   const obstacles: ChunkPlan["obstacles"] = [];
   const occupied: { lane: LaneIndex; z: number }[] = [];
 
+  const laneSpacing =
+    id < INTRO_CHUNK_END ? LANE_BLOCK_SPACING_INTRO : LANE_BLOCK_SPACING_NORMAL;
+
   const tryPushObs = (lane: LaneIndex, z: number, kind: ObstacleKind) => {
     if (z < startZ + 3 || z > endZ - 3) return false;
     for (const o of occupied) {
-      if (o.lane === lane && Math.abs(o.z - z) < 4.2) return false;
+      if (o.lane === lane && Math.abs(o.z - z) < laneSpacing) return false;
     }
     obstacles.push({ kind, lane, z });
     occupied.push({ lane, z });
     return true;
   };
 
-  const obsCount = 2 + Math.floor(difficulty * 4 + Math.random() * 2);
+  let obsCount: number;
+  if (id < INTRO_CHUNK_END) {
+    if (id <= 1) obsCount = Math.random() < 0.55 ? 1 : 0;
+    else if (id <= 4) obsCount = 1;
+    else obsCount = Math.random() < 0.85 ? 1 : 2;
+  } else if (id < MID_CHUNK_END) {
+    obsCount = 1 + Math.floor(Math.random() * 2 + difficulty * 1.5);
+    obsCount = Math.min(3, Math.max(1, obsCount));
+  } else {
+    obsCount = 2 + Math.floor(difficulty * 4 + Math.random() * 2);
+    obsCount = Math.min(6, obsCount);
+  }
+
+  function pickObstacleKind(): ObstacleKind {
+    if (id < INTRO_CHUNK_END) return "low";
+    const roll = Math.random();
+    if (id < MID_CHUNK_END) {
+      if (roll < 0.55) return "low";
+      if (roll < 0.82) return "high";
+      if (roll < 0.93) return "wall";
+      return Math.random() < 0.5 ? "drone" : "laser";
+    }
+    if (roll < 0.26 - difficulty * 0.05) return "high";
+    if (roll < 0.46) return "wall";
+    if (roll < 0.7 + difficulty * 0.08) return "drone";
+    if (roll < 0.86 + difficulty * 0.1) return "laser";
+    return "low";
+  }
+
   for (let i = 0; i < obsCount; i++) {
     const lane = randLane();
     const z = startZ + 5 + Math.random() * (CHUNK_LENGTH - 10);
-    const roll = Math.random();
-    let kind: ObstacleKind = "low";
-    if (roll < 0.28 - difficulty * 0.05) kind = "high";
-    else if (roll < 0.48) kind = "wall";
-    else if (roll < 0.72 + difficulty * 0.08) kind = "drone";
-    else if (roll < 0.88 + difficulty * 0.1) kind = "laser";
-    else kind = "low";
+    const kind = pickObstacleKind();
 
     // Avoid spawning inside gap
     if (gapRoll && grapple) {
@@ -108,7 +146,10 @@ export function planChunk(
   }
 
   const coins: ChunkPlan["coins"] = [];
-  const coinCount = 6 + Math.floor(Math.random() * 7 + difficulty * 4);
+  const coinCount =
+    id < INTRO_CHUNK_END
+      ? 5 + Math.floor(Math.random() * 5)
+      : 6 + Math.floor(Math.random() * 7 + difficulty * 4);
   for (let i = 0; i < coinCount; i++) {
     const lane = randLane();
     const z = startZ + 4 + Math.random() * (CHUNK_LENGTH - 8);

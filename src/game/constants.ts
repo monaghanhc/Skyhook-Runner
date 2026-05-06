@@ -8,15 +8,19 @@ export const PLAYER_HALF_DEPTH = 0.35;
 export const PLAYER_WIDTH = 0.55;
 export const PLAYER_STAND_HALF_HEIGHT = 0.72;
 export const PLAYER_SLIDE_HALF_HEIGHT = 0.38;
-export const INITIAL_SPEED = 11;
+/** Slower start; ramps up via SPEED_RAMP_PER_SEC */
+export const INITIAL_SPEED = 9;
 export const MAX_SPEED = 34;
-export const SPEED_RAMP_PER_SEC = 0.045;
+/** Gentle early acceleration; difficulty still ramps via score/chunk id */
+export const SPEED_RAMP_PER_SEC = 0.028;
 export const CHUNKS_AHEAD = 5;
 export const CHUNKS_BEHIND = 2;
-export const GRAPPLE_RANGE_Z = 5.5;
+/** Slightly forgiving window when gaps unlock */
+export const GRAPPLE_RANGE_Z = 6.25;
 export const GRAPPLE_DURATION = 0.95;
 export const GRAPPLE_ARC_HEIGHT = 5.2;
-export const DIFFICULTY_SCORE_STEP = 850;
+/** Higher = score contributes to difficulty more slowly */
+export const DIFFICULTY_SCORE_STEP = 1150;
 
 /** Best score storage */
 export const STORAGE_BEST = "skyhook_best_score";
