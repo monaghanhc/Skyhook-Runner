@@ -16,6 +16,7 @@ export class InputManager {
   private pause = false;
   /** Touch-only discrete lane step (+1 right / -1 left), consumed in laneIntent */
   private lanePulse: -1 | 0 | 1 = 0;
+  private invertHorizontalSwipe = false;
 
   private touchStartX = 0;
   private touchStartY = 0;
@@ -99,6 +100,15 @@ export class InputManager {
     // Digital one-shots cleared via consume*
   }
 
+  setInvertHorizontalSwipe(enabled: boolean) {
+    this.invertHorizontalSwipe = enabled;
+  }
+
+  private laneStepFromDx(dx: number): -1 | 1 {
+    const normal: -1 | 1 = dx < 0 ? -1 : 1;
+    return this.invertHorizontalSwipe ? (normal === -1 ? 1 : -1) : normal;
+  }
+
   private onKeyDown = (e: KeyboardEvent) => {
     if (e.repeat) return;
     const k = e.code;
@@ -163,7 +173,7 @@ export class InputManager {
 
     let handled = false;
     if (isLaneSwipe) {
-      this.lanePulse = dx < 0 ? -1 : 1;
+      this.lanePulse = this.laneStepFromDx(dx);
       handled = true;
     } else if (isVerticalSwipe) {
       if (dy < 0) this.jump = true;
@@ -171,7 +181,7 @@ export class InputManager {
       handled = true;
     } else if (adx > this.swipeThreshold || ady > this.swipeThreshold) {
       if (adx >= ady) {
-        this.lanePulse = dx < 0 ? -1 : 1;
+        this.lanePulse = this.laneStepFromDx(dx);
       } else if (dy < 0) {
         this.jump = true;
       } else {
