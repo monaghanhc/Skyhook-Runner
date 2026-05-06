@@ -10,8 +10,15 @@ import { TutorialInGameTips } from "./components/TutorialInGameTips";
 import { LeaderboardPanel } from "./components/LeaderboardPanel";
 import type { HudSnapshot } from "./game/types";
 import type { GameEngine } from "./game/GameEngine";
-import { STORAGE_BEST, STORAGE_PERF, STORAGE_TUTORIAL, STORAGE_USERNAME } from "./game/constants";
 import {
+  STORAGE_BEST,
+  STORAGE_DEVICE_ID,
+  STORAGE_PERF,
+  STORAGE_TUTORIAL,
+  STORAGE_USERNAME,
+} from "./game/constants";
+import {
+  fetchDeviceBestScore,
   fetchLeaderboard,
   leaderboardConfigHint,
   leaderboardConfigured,
@@ -49,6 +56,15 @@ export default function App() {
   const [gameOverStats, setGameOverStats] = useState({ score: 0, coins: 0, best: 0 });
   const [lastRunTutorial, setLastRunTutorial] = useState(false);
   const [username, setUsername] = useState(() => localStorage.getItem(STORAGE_USERNAME) ?? "");
+  const [deviceId] = useState(() => {
+    const existing = localStorage.getItem(STORAGE_DEVICE_ID);
+    if (existing) return existing;
+    const generated =
+      globalThis.crypto?.randomUUID?.() ??
+      `device_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+    localStorage.setItem(STORAGE_DEVICE_ID, generated);
+    return generated;
+  });
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
   const [leaderboardError, setLeaderboardError] = useState<string | null>(null);
@@ -209,7 +225,12 @@ export default function App() {
     setSubmitBusy(true);
     setSubmitMessage(null);
     try {
-      await submitScore(cleanName, gameOverStats.score);
+      const existingBest = await fetchDeviceBestScore(deviceId);
+      if (existingBest !== null && gameOverStats.score <= existingBest) {
+        setSubmitMessage("Only higher scores replace your current leaderboard entry.");
+        return;
+      }
+      await submitScore(cleanName, gameOverStats.score, deviceId);
       setSubmitMessage("Score posted to global leaderboard.");
       await refreshLeaderboard();
     } catch (err) {
@@ -217,7 +238,7 @@ export default function App() {
     } finally {
       setSubmitBusy(false);
     }
-  }, [gameOverStats.score, lastRunTutorial, refreshLeaderboard, username]);
+  }, [deviceId, gameOverStats.score, lastRunTutorial, refreshLeaderboard, username]);
 
   return (
     <div className="relative h-[100dvh] w-full overflow-hidden bg-slate-950 text-slate-50">

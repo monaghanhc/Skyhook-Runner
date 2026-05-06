@@ -123,6 +123,7 @@ Create table in Supabase SQL editor:
 ```sql
 create table if not exists public.leaderboard_scores (
   id uuid primary key default gen_random_uuid(),
+  device_id text not null unique,
   username text not null check (char_length(username) between 1 and 20),
   score integer not null check (score > 0),
   created_at timestamptz not null default now()
@@ -141,6 +142,16 @@ on public.leaderboard_scores
 for insert
 to anon
 with check (true);
+```
+
+If you already created the table earlier, run this migration too:
+
+```sql
+alter table public.leaderboard_scores
+add column if not exists device_id text;
+
+create unique index if not exists leaderboard_scores_device_id_idx
+on public.leaderboard_scores(device_id);
 ```
 
 ### If posting still fails

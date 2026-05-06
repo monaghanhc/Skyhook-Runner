@@ -59,15 +59,40 @@ export async function fetchLeaderboard(limit = 20): Promise<LeaderboardEntry[]> 
   return (await res.json()) as LeaderboardEntry[];
 }
 
-export async function submitScore(username: string, score: number): Promise<void> {
+export async function fetchDeviceBestScore(deviceId: string): Promise<number | null> {
+  if (!isConfigured()) return null;
+  const cleanDeviceId = deviceId.trim();
+  if (!cleanDeviceId) return null;
+  const encoded = encodeURIComponent(cleanDeviceId);
+  const url = `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?select=score&device_id=eq.${encoded}&limit=1`;
+  const res = await fetch(url, { headers: headers() });
+  if (!res.ok) {
+    const details = await extractErrorDetails(res);
+    throw new LeaderboardError(
+      `Leaderboard device lookup failed (${res.status})`,
+      res.status,
+      details,
+    );
+  }
+  const rows = (await res.json()) as Array<{ score: number }>;
+  const first = rows.at(0);
+  if (!first) return null;
+  return Number(first.score);
+}
+
+export async function submitScore(username: string, score: number, deviceId: string): Promise<void> {
   if (!isConfigured()) return;
   const cleanName = username.trim().slice(0, 20);
-  if (!cleanName || score <= 0) return;
-  const url = `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}`;
+  const cleanDeviceId = deviceId.trim();
+  if (!cleanName || score <= 0 || !cleanDeviceId) return;
+  const url = `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?on_conflict=device_id`;
   const res = await fetch(url, {
     method: "POST",
-    headers: { ...headers(), Prefer: "return=minimal" },
-    body: JSON.stringify([{ username: cleanName, score }]),
+    headers: {
+      ...headers(),
+      Prefer: "resolution=merge-duplicates,return=minimal",
+    },
+    body: JSON.stringify([{ device_id: cleanDeviceId, username: cleanName, score }]),
   });
   if (!res.ok) {
     const details = await extractErrorDetails(res);
@@ -93,6 +118,9 @@ export function leaderboardTroubleshootingHint(err: unknown): string {
   }
   if (err.status === 400) {
     return `Bad leaderboard request${err.details ? `: ${err.details}` : "."}`;
+  }
+  if (err.status === 409) {
+    return "Duplicate constraint conflict. Ensure leaderboard table has unique device_id.";
   }
   return `Leaderboard error${err.status ? ` (${err.status})` : ""}${err.details ? `: ${err.details}` : "."}`;
 }

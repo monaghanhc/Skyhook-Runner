@@ -39,7 +39,7 @@ export function GameOver({
       {!tutorialRun && (
         <div className="mb-5 flex w-full flex-col gap-2 rounded-2xl border border-white/10 bg-white/5 p-3">
           <label className="text-left text-[11px] uppercase tracking-wide text-slate-300">
-            Username for leaderboard
+            Username for leaderboard (one entry per phone)
           </label>
           <div className="flex gap-2">
             <input
