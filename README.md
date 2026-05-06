@@ -46,6 +46,7 @@ Live site (after the workflow succeeds):
 **https://monaghanhc.github.io/Skyhook-Runner/**
 
 1. Push to `main` — the workflow in `.github/workflows/deploy-pages.yml` builds with Vite and deploys `dist/` via **GitHub Actions**.
+   - If you need a manual refresh after updating Actions secrets/variables, push any small commit to retrigger deployment.
 2. In the repo on GitHub: **Settings → Pages → Build and deployment → Source**: select **GitHub Actions** (not “Deploy from a branch”).
 3. Open the **Actions** tab and confirm the **Deploy to GitHub Pages** workflow completed; the Pages URL appears on the workflow run and under Pages settings.
 
